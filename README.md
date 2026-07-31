@@ -4,7 +4,7 @@
 
 Colorado's outbound freight tonnage fell **15.8%** between 2018 and 2024. This project uses the federal Freight Analysis Framework (FAF5.7.1) to identify what's behind the decline — and finds that **72% of the drop traces to energy commodities**, while the truck freight that most Colorado businesses depend on remained comparatively stable.
 
-*Case study by Jake Chervitz | Python · pandas · matplotlib | [Portfolio](https://jakechervitz.github.io) · [LinkedIn](https://www.linkedin.com/in/jakechervitz)*
+*Case study by Jake Chervitz | Python · pandas · matplotlib | [Portfolio](github.com/jakechervitz/colorado-freight-analysis) · [LinkedIn](www.linkedin.com/in/jake-chervitz-913b36b9)*
 
 ---
 
