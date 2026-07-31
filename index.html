@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colorado Freight Flow Analysis, 2018–2024 — Jake Chervitz</title>
+<meta name="description" content="What's driving the decline in Colorado's freight tonnage? A commodity and mode-shift analysis of the federal FAF5 dataset.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F6F2;
+    --panel:#FFFFFF;
+    --ink:#15202B;
+    --navy:#1F3A5F;
+    --coral:#E0604F;
+    --sage:#5F7A50;
+    --line:#DEDDD3;
+    --muted:#6A6E66;
+    --maxw:1080px;
+    --textw:720px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Spectral',Georgia,serif;
+    font-size:19px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+  .text{max-width:var(--textw)}
+
+  /* ---- top bar ---- */
+  header.bar{
+    position:sticky;top:0;z-index:50;
+    background:rgba(246,246,242,.88);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+  }
+  .bar .wrap{display:flex;align-items:center;justify-content:space-between;height:54px}
+  .bar .id{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.04em;
+    color:var(--navy);text-transform:uppercase;
+  }
+  .bar nav{display:flex;gap:22px}
+  .bar nav a{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.03em;
+    color:var(--muted);text-decoration:none;text-transform:uppercase;
+    transition:color .15s;
+  }
+  .bar nav a:hover{color:var(--coral)}
+  @media(max-width:640px){.bar nav{display:none}}
+
+  /* ---- hero ---- */
+  .hero{padding:96px 0 60px;border-bottom:1px solid var(--line)}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--coral);margin-bottom:26px;
+  }
+  .eyebrow span{color:var(--muted)}
+  h1{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;
+    font-size:clamp(2.4rem,5.6vw,4.1rem);
+    line-height:1.04;letter-spacing:-.02em;color:var(--navy);
+    max-width:16ch;margin-bottom:30px;
+  }
+  .lede{font-size:21px;line-height:1.6;max-width:60ch;color:var(--ink)}
+  .lede strong{color:var(--navy);font-weight:600}
+
+  /* ---- stat manifest ---- */
+  .manifest{
+    display:grid;grid-template-columns:repeat(4,1fr);
+    border:1px solid var(--line);border-radius:3px;background:var(--panel);
+    margin-top:52px;overflow:hidden;
+  }
+  .stat{padding:26px 22px;border-right:1px solid var(--line)}
+  .stat:last-child{border-right:none}
+  .stat .num{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;
+    font-size:2.5rem;line-height:1;letter-spacing:-.02em;color:var(--coral);
+  }
+  .stat .num.up{color:var(--sage)}
+  .stat .lbl{
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.5;
+    letter-spacing:.02em;color:var(--muted);text-transform:uppercase;margin-top:12px;
+  }
+  @media(max-width:760px){
+    .manifest{grid-template-columns:repeat(2,1fr)}
+    .stat:nth-child(2){border-right:none}
+    .stat:nth-child(1),.stat:nth-child(2){border-bottom:1px solid var(--line)}
+  }
+
+  /* ---- sections ---- */
+  section{padding:74px 0;border-bottom:1px solid var(--line)}
+  .sec-head{display:flex;gap:20px;align-items:baseline;margin-bottom:32px}
+  .sec-num{
+    font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;
+    color:var(--coral);letter-spacing:.06em;padding-top:6px;white-space:nowrap;
+  }
+  h2{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;
+    font-size:clamp(1.7rem,3.4vw,2.35rem);line-height:1.1;
+    letter-spacing:-.015em;color:var(--navy);
+  }
+  h3{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;
+    font-size:1.28rem;color:var(--navy);margin:0 0 10px;letter-spacing:-.01em;
+  }
+  p{margin-bottom:18px}
+  p:last-child{margin-bottom:0}
+  .text a{color:var(--coral);text-decoration:none;border-bottom:1px solid rgba(224,96,79,.35)}
+  .text a:hover{border-bottom-color:var(--coral)}
+  .q{
+    font-family:'Space Grotesk',sans-serif;font-weight:500;
+    font-size:clamp(1.3rem,2.8vw,1.75rem);line-height:1.3;color:var(--navy);
+    padding:4px 0 4px 24px;border-left:3px solid var(--coral);margin:6px 0 26px;
+    letter-spacing:-.01em;
+  }
+
+  /* ---- data chips (prepare) ---- */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 4px}
+  .chip{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.02em;
+    color:var(--navy);background:var(--panel);border:1px solid var(--line);
+    border-radius:2px;padding:7px 12px;
+  }
+  .chip b{color:var(--coral);font-weight:600}
+
+  /* ---- process pipeline ---- */
+  .pipe{
+    font-family:'IBM Plex Mono',monospace;font-size:13.5px;line-height:2;
+    background:var(--panel);border:1px solid var(--line);border-radius:3px;
+    padding:22px 24px;margin:6px 0 4px;color:var(--ink);overflow-x:auto;
+  }
+  .pipe .step{white-space:nowrap}
+  .pipe .arrow{color:var(--coral);padding:0 4px}
+  .pipe .big{color:var(--navy);font-weight:600}
+
+  /* ---- figures ---- */
+  .figs{margin-top:8px}
+  figure{margin:0 0 60px}
+  figure:last-child{margin-bottom:0}
+  .figtag{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.05em;
+    color:var(--coral);text-transform:uppercase;margin-bottom:14px;
+  }
+  .figtag span{color:var(--muted)}
+  .frame{
+    background:var(--panel);border:1px solid var(--line);border-radius:4px;
+    padding:20px;box-shadow:0 1px 2px rgba(20,32,43,.04);
+  }
+  .frame img{display:block;width:100%;height:auto;border-radius:2px}
+  figure h3{margin-top:26px}
+  figure .find{max-width:var(--textw)}
+  figure .find .em{color:var(--coral);font-weight:600;font-style:normal}
+  .note{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.6;
+    color:var(--muted);border-top:1px solid var(--line);
+    margin-top:16px;padding-top:14px;max-width:var(--textw);
+  }
+
+  /* ---- recommendations ---- */
+  .recs{counter-reset:r;margin-top:8px}
+  .rec{
+    display:flex;gap:20px;padding:22px 0;border-top:1px solid var(--line);
+    max-width:var(--textw);
+  }
+  .rec:before{
+    counter-increment:r;content:"0" counter(r);
+    font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--coral);
+    padding-top:4px;
+  }
+  .rec h3{margin-bottom:6px;font-size:1.15rem}
+  .rec p{font-size:17px;margin:0}
+
+  /* ---- caveats ---- */
+  .caveats{
+    background:var(--panel);border:1px solid var(--line);border-radius:3px;
+    padding:26px 28px;max-width:var(--textw);
+  }
+  .caveats .figtag{margin-bottom:16px}
+  .caveats ul{list-style:none;margin:0;padding:0}
+  .caveats li{
+    font-size:16px;line-height:1.55;padding:9px 0 9px 20px;position:relative;
+    border-bottom:1px solid var(--line);
+  }
+  .caveats li:last-child{border-bottom:none;padding-bottom:0}
+  .caveats li:before{content:"—";position:absolute;left:0;color:var(--coral)}
+
+  /* ---- footer ---- */
+  footer{padding:64px 0 80px}
+  .foot-grid{display:flex;flex-wrap:wrap;gap:40px 64px;justify-content:space-between}
+  .foot-col h4{
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:14px;font-weight:500;
+  }
+  .foot-col a{
+    display:block;font-family:'Space Grotesk',sans-serif;font-size:16px;
+    color:var(--navy);text-decoration:none;margin-bottom:8px;transition:color .15s;
+  }
+  .foot-col a:hover{color:var(--coral)}
+  .foot-col p{font-size:14px;color:var(--muted);line-height:1.6;max-width:34ch;font-family:'IBM Plex Mono',monospace}
+  .colophon{
+    margin-top:52px;padding-top:22px;border-top:1px solid var(--line);
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;
+  }
+
+  /* ---- reveal ---- */
+  .rv{opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s ease}
+  .rv.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){
+    .rv{opacity:1;transform:none;transition:none}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <div class="id">CO&nbsp;Freight&nbsp;/&nbsp;FAF5</div>
+    <nav>
+      <a href="#ask">Ask</a>
+      <a href="#analyze">Analysis</a>
+      <a href="#act">Recommendations</a>
+      <a href="https://github.com/jakechervitz/colorado-freight-analysis">Repo</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="eyebrow rv">Case Study <span>·</span> FAF5.7.1 <span>·</span> 2018–2024 <span>·</span> Jake Chervitz</div>
+    <h1 class="rv">What's driving the decline in Colorado's freight tonnage?</h1>
+    <p class="lede text rv">Colorado's outbound freight fell <strong>15.8%</strong> between 2018 and 2024. This analysis of the federal Freight Analysis Framework finds the drop isn't a broad freight recession — <strong>nearly three-quarters of it traces to energy commodities</strong>, while the truck freight most Colorado businesses depend on held comparatively steady.</p>
+
+    <div class="manifest rv">
+      <div class="stat"><div class="num">72%</div><div class="lbl">of the decline<br>from energy commodities</div></div>
+      <div class="stat"><div class="num">−37.2%</div><div class="lbl">natural gas &amp; fossil<br>products (SCTG 19)</div></div>
+      <div class="stat"><div class="num">−9.6%</div><div class="lbl">truck tonnage —<br>the resilient core</div></div>
+      <div class="stat"><div class="num up">+15.1%</div><div class="lbl">crude petroleum —<br>the counter-trend</div></div>
+    </div>
+  </div>
+</div>
+
+<section id="ask">
+  <div class="wrap">
+    <div class="sec-head rv"><div class="sec-num">01 / ASK</div><h2>The question &amp; the stakeholder</h2></div>
+    <div class="text rv">
+      <p class="q">How have Colorado's freight flows shifted by commodity and mode from 2018 to 2024 — and does the decline threaten core trucking demand?</p>
+      <p>The analysis is framed for a fictional stakeholder, <strong>Rocky Mountain Freight Advisors</strong> — a regional 3PL and consulting firm advising carriers and infrastructure planners. Their clients make fleet-investment, lane-strategy, and modal-capacity decisions in the Colorado market, and a shrinking-tonnage headline raises an obvious question: shrinking <em>where</em>, and does it put trucking revenue at risk?</p>
+    </div>
+  </div>
+</section>
+
+<section id="prepare">
+  <div class="wrap">
+    <div class="sec-head rv"><div class="sec-num">02 / PREPARE</div><h2>The data</h2></div>
+    <div class="text rv">
+      <p>Source: the <strong>Freight Analysis Framework Version 5 (FAF5.7.1)</strong> regional database, published by the Bureau of Transportation Statistics and the Federal Highway Administration — the authoritative federal record of commodity flows by origin, destination, commodity, and mode.</p>
+      <div class="chips">
+        <div class="chip">ZONES <b>081 Denver–Aurora · 089 Rest of CO</b></div>
+        <div class="chip">MODES <b>5</b></div>
+        <div class="chip">COMMODITIES <b>42 SCTG</b></div>
+        <div class="chip">YEARS <b>2018–2024</b></div>
+        <div class="chip">MEASURE <b>tons</b></div>
+        <div class="chip">TRADE <b>domestic</b></div>
+      </div>
+      <p style="margin-top:22px">The dataset scores well on <span class="mono" style="font-size:15px">ROCCC</span> — a reliable, original, comprehensive, current, and citable government source. Key caveats are stated rather than hidden: FAF flows are modeled estimates rather than raw shipment records, and the 2023–24 figures are preliminary.</p>
+    </div>
+  </div>
+</section>
+
+<section id="process">
+  <div class="wrap">
+    <div class="sec-head rv"><div class="sec-num">03 / PROCESS</div><h2>From 663 MB to a clean signal</h2></div>
+    <div class="text rv">
+      <p>The national regional file is roughly two million rows. A documented pandas pipeline filtered it to Colorado-origin domestic flows, decoded the numeric mode and commodity codes to labels with validation checks, and reshaped the wide year columns into tidy long format.</p>
+    </div>
+    <div class="pipe rv">
+      <span class="step"><span class="big">663 MB · ~2M rows</span></span><span class="arrow">→</span><span class="step">filter CO origins + domestic</span><span class="arrow">→</span><span class="step">decode modes / SCTG</span><span class="arrow">→</span><span class="step">melt to tidy</span><span class="arrow">→</span><span class="step">validate</span><span class="arrow">→</span><span class="step"><span class="big">5.4 MB analysis set</span></span>
+    </div>
+    <div class="text rv"><p style="margin-top:20px">Cleaned totals were cross-checked against independent extracts from the FAF Data Tabulation Tool; domestic-only figures landed appropriately below the all-trade-type recon numbers, confirming the filter behaved as intended.</p></div>
+  </div>
+</section>
+
+<section id="analyze">
+  <div class="wrap">
+    <div class="sec-head rv"><div class="sec-num">04 / ANALYZE</div><h2>Five views of the shift</h2></div>
+
+    <div class="figs">
+
+      <figure class="rv">
+        <div class="figtag">Fig. 01 <span>— outbound tonnage by mode</span></div>
+        <div class="frame"><img src="charts/01_mode_trends.png" alt="Line chart of Colorado outbound freight by mode, 2018–2024, showing truck far above pipeline, rail, and other modes"></div>
+        <h3>The decline is concentrated in energy-linked modes</h3>
+        <div class="find">
+          <p>Pipeline volumes fell <span class="em">26.7%</span> and rail <span class="em">18.8%</span>, while truck — which carries the majority of state tonnage — declined just <span class="em">9.6%</span>. The two modes most tied to energy commodities drove the contraction; general freight demand held far steadier.</p>
+        </div>
+      </figure>
+
+      <figure class="rv">
+        <div class="figtag">Fig. 02 <span>— absolute change by commodity</span></div>
+        <div class="frame"><img src="charts/02_commodity_change.png" alt="Horizontal bar chart of the biggest commodity shifts, with natural gas and fossil products showing by far the largest decline in coral"></div>
+        <h3>One commodity group dominates the story</h3>
+        <div class="find">
+          <p>Natural gas and other fossil products (SCTG 19) fell <span class="em">37.2%</span> — a loss of <span class="em">34.2 million tons</span>, six times larger than the next biggest decline and more than every other declining commodity combined. Coal added a further 22.2% drop, consistent with power-plant retirements. The largest non-energy mover, cereal grains (−25.2%), is flagged as a secondary finding with causes outside this dataset's scope.</p>
+        </div>
+      </figure>
+
+      <figure class="rv">
+        <div class="figtag">Fig. 03 <span>— energy vs. all other freight, indexed</span></div>
+        <div class="frame"><img src="charts/03_energy_vs_other_indexed.png" alt="Indexed line chart with energy freight falling to 76 and all other freight at 92 by 2024, both starting at 100 in 2018"></div>
+        <h3>Two different economies</h3>
+        <div class="find">
+          <p>Split into energy commodities (SCTG 15–19) versus everything else, the two halves diverge cleanly. By 2024 energy freight sat at an index of <span class="em">76</span> (2018 = 100) against <span class="em">92</span> for all other freight. Energy drove <span class="em">72%</span> of the total decline despite being a minority of volume — and where the non-energy line dips with the business cycle (2020 COVID, 2022–23 softness), the energy line steps down structurally regardless.</p>
+        </div>
+      </figure>
+
+      <figure class="rv">
+        <div class="figtag">Fig. 04 <span>— the five energy commodities</span></div>
+        <div class="frame"><img src="charts/04_energy_small_multiples.png" alt="Small-multiple charts of coal, crude petroleum, gasoline, fuel oils, and natural gas products, with crude rising and the rest falling"></div>
+        <h3>The fossil-fuel decline isn't uniform</h3>
+        <div class="find">
+          <p>Natural gas products (−37.2%) and coal (−22.2%) drive nearly all of the decline — but crude petroleum freight moved the other way, growing <span class="em">15.1%</span>. A cross-check against EIA's Colorado crude-production series complicates the obvious read: state production was roughly flat over the period. The freight growth therefore likely reflects shipment-pattern changes and modeling factors, not production growth alone — a divergence worth flagging rather than glossing.</p>
+          <div class="note">VALIDATION — EIA Colorado Field Production of Crude Oil: ~463 (2018) vs. ~465 (2024) thousand b/d annual average, with a 2019 peak and 2020–21 trough. Freight +15.1% outpaced flat production.</div>
+        </div>
+      </figure>
+
+      <figure class="rv">
+        <div class="figtag">Fig. 05 <span>— the stable trucking core</span></div>
+        <div class="frame"><img src="charts/05_truck_stable_core.png" alt="Horizontal bar chart of top truck commodities out of Colorado in 2024 with their percentage change since 2018"></div>
+        <h3>What it means for the freight businesses actually touch</h3>
+        <div class="find">
+          <p>Gravel and aggregates, mixed freight, and foodstuffs — the commodities that fill trucks — held comparatively steady through 2024, supporting metro construction and consumer distribution. For carriers and 3PLs, the headline tonnage decline <span class="em">overstates the risk to truckload demand</span>: the shrinkage is happening in pipelines and rail cars, not on trucks.</p>
+        </div>
+      </figure>
+
+    </div>
+  </div>
+</section>
+
+<section id="act">
+  <div class="wrap">
+    <div class="sec-head rv"><div class="sec-num">05 / ACT</div><h2>Recommendations</h2></div>
+    <div class="rv">
+      <p class="text" style="margin-bottom:8px;color:var(--muted)">For Rocky Mountain Freight Advisors' clients:</p>
+      <div class="recs">
+        <div class="rec">
+          <div>
+            <h3>Reassess energy-linked exposure</h3>
+            <p>Revenue tied to coal rail lanes and gas-product pipelines faces structural, not cyclical, decline — 72% of the state's tonnage loss came from energy. Contract and asset decisions should assume continued contraction.</p>
+          </div>
+        </div>
+        <div class="rec">
+          <div>
+            <h3>Treat Colorado truckload demand as stable</h3>
+            <p>Fleet and lane investments shouldn't be driven by headline state tonnage figures; core truck commodities declined only modestly (−9.6% overall).</p>
+          </div>
+        </div>
+        <div class="rec">
+          <div>
+            <h3>Watch crude-related capacity as a selective growth pocket</h3>
+            <p>Crude freight rose 15.1% since 2018. Monitor the FAF6 benchmark (expected mid-2026) and revisions to preliminary 2024 estimates before long-horizon commitments.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="caveats rv" style="margin-top:44px">
+      <div class="figtag">Caveats &amp; scope</div>
+      <ul>
+        <li>FAF flows are modeled estimates built from the Commodity Flow Survey, not raw shipment records.</li>
+        <li>2023–24 estimates are preliminary and subject to revision.</li>
+        <li>Colorado is represented by two FAF zones, limiting intra-state granularity.</li>
+        <li>The cereal-grains decline is a secondary, non-energy finding whose causes lie outside this dataset.</li>
+        <li>Crude freight growth outpaced roughly flat EIA-reported production — an open question for deeper analysis.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-col">
+        <h4>Project</h4>
+        <a href="https://github.com/jakechervitz/colorado-freight-analysis">GitHub repository</a>
+        <a href="https://github.com/jakechervitz/colorado-freight-analysis/blob/main/01_process_faf5_cleaning.ipynb">Process notebook</a>
+        <a href="https://github.com/jakechervitz/colorado-freight-analysis/blob/main/02_analyze_faf5_charts.ipynb">Analysis notebook</a>
+      </div>
+      <div class="foot-col">
+        <h4>Analyst</h4>
+        <a href="https://jakechervitz.github.io">Portfolio</a>
+        <a href="https://www.linkedin.com/in/YOUR-LINKEDIN-SLUG">LinkedIn</a>
+        <a href="mailto:YOUR-EMAIL@example.com">Email</a>
+      </div>
+      <div class="foot-col">
+        <h4>Source</h4>
+        <p>FAF5.7.1 Regional Database, Bureau of Transportation Statistics &amp; FHWA. Public-domain U.S. government data.</p>
+      </div>
+    </div>
+    <div class="colophon">
+      <span>Built with Python · pandas · matplotlib</span>
+      <span>Jake Chervitz · 2026</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const io=new IntersectionObserver((es)=>{
+    es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})
+  },{threshold:.12,rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
